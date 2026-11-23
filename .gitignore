@@ -1,0 +1,34 @@
+# Model weights & tokenizer files
+weights/*.pt
+weights/*.json
+*.pt
+*.pth
+*.ckpt
+*.bin
+*.safetensors
+*.gguf
+*.onnx
+*.npz
+*.pt.*
+*.ckpt.*
+*.safetensors.*
+*.crdownload
+*.download
+*.part
+*.partial
+
+# Local environments and generated files
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.npm-cache/
+node_modules/
+frontend/node_modules/
+frontend/dist/
+coverage/
+.env
+.env.*
+.DS_Store
