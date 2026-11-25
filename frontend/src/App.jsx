@@ -62,7 +62,8 @@ export default function App() {
         )}
 
         <Suspense fallback={null}>
-          <ModelGuide compact={chat.messages.length > 0} />
+          <ModelGuide compact={chat.messages.length > 0} maxNewTokens={chat.health?.max_new_tokens}
+            onSelectPrompt={chat.setInput} />
         </Suspense>
 
         {showIntro ? (

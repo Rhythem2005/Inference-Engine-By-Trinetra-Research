@@ -1,6 +1,7 @@
 """KAAL-304M Apple Silicon inference engine package."""
 
 from .config import (
+    DEFAULT_DECODING_CONFIG,
     DEFAULT_MODEL_CONFIG,
     EOS_TOKEN,
     EXPECTED_UNIQUE_PARAMS,
@@ -14,6 +15,7 @@ from .inference import KAALEngine
 from .model import KAALModel, count_unique_parameters
 
 __all__ = [
+    "DEFAULT_DECODING_CONFIG",
     "DEFAULT_MODEL_CONFIG",
     "DecodingConfig",
     "EOS_TOKEN",

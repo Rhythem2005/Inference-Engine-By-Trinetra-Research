@@ -51,7 +51,7 @@ def parity_context() -> Tuple[KAALEngine, KAALModel, Tokenizer]:
     assert engine.model.out_head.weight.data_ptr() == engine.model.tok_emb.weight.data_ptr()
     assert count_unique_parameters(engine.model) == EXPECTED_UNIQUE_PARAMS
 
-    payload = torch.load(WEIGHTS_DIR / "best_model.pt", map_location="cpu", weights_only=False)
+    payload = torch.load(WEIGHTS_DIR / "best_model.pt", map_location="cpu", weights_only=True)
     state_dict = payload["model"] if isinstance(payload, dict) and "model" in payload else payload
     ref_model = KAALModel(DEFAULT_MODEL_CONFIG).eval()
     ref_model.load_state_dict(state_dict, strict=True)

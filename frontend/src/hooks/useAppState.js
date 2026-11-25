@@ -107,7 +107,7 @@ export default function useAppState() {
     ]);
 
     try {
-      const modelContext = buildChatContext(messages, message, requestContext);
+      const modelContext = buildChatContext(messages, message, requestContext, health?.max_new_tokens);
       const events = await openChatStream(message, modelContext, request.controller.signal);
       for await (const event of events) {
         if (generation.current !== request) return;

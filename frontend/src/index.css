@@ -96,6 +96,7 @@ button:focus-visible, input:focus-visible, summary:focus-visible, textarea:focus
   transition: border-color .16s ease, background-color .16s ease;
 }
 .new-chat:hover, .about-button:hover, .retry-button:not(:disabled):hover { border-color: #64564b; background: #312b26; }
+.website-link { display: inline-flex; align-items: center; }
 
 .agent { display: block; overflow: visible; }
 .agent-head { transform-origin: 46px 58px; }
@@ -539,6 +540,17 @@ button:focus-visible, input:focus-visible, summary:focus-visible, textarea:focus
   letter-spacing: -.025em;
 }
 .model-notice p + p { margin-top: 7px; }
+.model-notice:has(.model-notice-details[open]) { max-height: 45dvh; overflow-y: auto; }
+.model-notice-details > summary { display: list-item; cursor: pointer; }
+.model-notice-expanded { margin-top: 5px; }
+.model-notice h3 { margin-top: 10px; font-weight: 800; }
+.model-notice-prompts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 225px), 1fr));
+  gap: 2px 16px;
+  margin: 4px 0 8px;
+}
+.model-notice-prompts .model-guide-link { margin-top: 0; min-height: 24px; }
 .model-notice[data-compact="true"] { padding-block: 10px; }
 .model-notice[data-compact="true"] h2 { font-size: 23px; margin-bottom: 3px; }
 .model-notice-reopen { width: min(100% - var(--gutter) * 2, var(--column)); margin: 3px auto 0; }
@@ -655,7 +667,7 @@ button:focus-visible, input:focus-visible, summary:focus-visible, textarea:focus
 
 @media (max-width: 540px) {
   .masthead-inner { display: flex; flex-wrap: wrap; height: auto; padding-block: 9px; }
-  .masthead-actions { width: 100%; gap: 5px; }
+  .masthead-actions { width: 100%; flex-wrap: wrap; gap: 5px; }
   .health-badge { margin-right: auto; }
   .model-picker summary { padding-inline: 7px; font-size: 11px; }
   .key-hint { display: none; }
@@ -709,7 +721,7 @@ button:focus-visible, input:focus-visible, summary:focus-visible, textarea:focus
 .research-content .research-subtitle { font-size: clamp(24px, 4vw, 33px); margin-top: 25px; }
 .research-content h3 { color: var(--ink); font-weight: 800; margin: 19px 0 3px; }
 .research-content .research-lead { color: var(--ink); font-size: 16px; margin: 11px 0; }
-.research-label, .founder-hindi { color: var(--accent-ink); }
+.research-label { color: var(--accent-ink); }
 .research-label { text-transform: uppercase; letter-spacing: .11em; font-size: 10px; font-weight: 800; }
 .research-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 12px 0 22px; }
 .research-grid > div { border: 1px solid var(--edge); background: var(--surface); border-radius: 9px; padding: 10px; }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus } from 'lucide-react';
+import { ArrowUpRight, Plus } from 'lucide-react';
 import trinetraLogo from '../trinetra.svg';
 
 export default function Navbar({ health, backendError, onNewChat, onAbout }) {
@@ -23,6 +23,10 @@ export default function Navbar({ health, backendError, onNewChat, onAbout }) {
           </span>
           <button className="about-button" type="button" onClick={() => onAbout('philosophy')}>Philosophy</button>
           <button className="about-button" type="button" onClick={() => onAbout('founder')}>Founder</button>
+          <a className="about-button website-link" href="https://trinetra-research.vercel.app/" target="_blank" rel="noopener noreferrer"
+            aria-label="Trinetra Research website (opens in a new tab)">
+            Website <ArrowUpRight size={13} aria-hidden="true" />
+          </a>
           <button className="new-chat" type="button" onClick={onNewChat}>
             <Plus size={16} strokeWidth={1.8} aria-hidden="true" /> New Chat
           </button>

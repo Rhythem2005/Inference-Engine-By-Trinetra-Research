@@ -12,7 +12,7 @@ export default function SetupScreen({ missingFiles = [], onRetry, checking, masc
         initial={{ opacity: 0, y: 7 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.22 }}>
         <AgentAvatar className="setup-mascot" state="alert" variant={mascot || undefined} />
         <h1 id="setup-title">Model weights missing</h1>
-        <p>Place these files in <code>./weights/</code>, then restart KAAL with <code>./start.sh</code>.</p>
+        <p>Place these files in <code>./weights/</code>, then restart the KAAL backend.</p>
         <ul className="setup-files">
           {files.map((file) => {
             const missing = missingFiles.length === 0 || missingFiles.some((path) => path.split('/').pop() === file);

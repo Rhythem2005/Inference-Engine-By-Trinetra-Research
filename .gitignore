@@ -1,6 +1,9 @@
 # Model weights & tokenizer files
-weights/*.pt
-weights/*.json
+/weights/*
+!/weights/README.md
+/tokenizer.json
+/checkpoints/
+/datasets/
 *.pt
 *.pth
 *.ckpt
@@ -16,6 +19,7 @@ weights/*.json
 *.download
 *.part
 *.partial
+*.log
 
 # Local environments and generated files
 .venv/
@@ -26,9 +30,13 @@ __pycache__/
 .ruff_cache/
 .npm-cache/
 node_modules/
-frontend/node_modules/
 frontend/dist/
 coverage/
 .env
 .env.*
+*.pem
+*.key
+.aws/
+.npmrc
+.pypirc
 .DS_Store

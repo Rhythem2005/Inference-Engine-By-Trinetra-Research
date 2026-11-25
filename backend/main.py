@@ -1,4 +1,4 @@
-"""FastAPI backend for KAAL-304M Local with SSE streaming and locked decoding."""
+"""FastAPI backend for KAAL-304M Local with SSE streaming."""
 
 from __future__ import annotations
 
@@ -8,20 +8,24 @@ os.environ.setdefault("PYTORCH_ENABLE_MPS_FALLBACK", "1")
 
 import asyncio
 import json
+import logging
 import threading
 from contextlib import asynccontextmanager
+from dataclasses import replace
 from pathlib import Path
 from typing import Any, AsyncGenerator, Dict, Optional
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from backend.engine import KAALEngine
+from backend.engine import DEFAULT_DECODING_CONFIG, DecodingConfig, KAALEngine
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_WEIGHTS_DIR = REPO_ROOT / "weights"
+logger = logging.getLogger(__name__)
 
 ALLOWED_ORIGINS = [
     "http://localhost:5173",
@@ -30,7 +34,7 @@ ALLOWED_ORIGINS = [
 
 
 class ChatRequest(BaseModel):
-    """Strictly locked chat request schema — forbids hyperparameter overrides."""
+    """Chat requests use the server's generation profile."""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -58,10 +62,29 @@ def _format_sse(payload: Dict[str, Any]) -> str:
     return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
 
 
-def create_app(weights_dir: Optional[str | Path] = None) -> FastAPI:
+def _configured_decoding() -> DecodingConfig:
+    raw = os.environ.get("KAAL_DECODING")
+    if raw is None:
+        return DEFAULT_DECODING_CONFIG
+    try:
+        settings = json.loads(raw)
+        if not isinstance(settings, dict):
+            raise ValueError("expected a JSON object")
+        return replace(DEFAULT_DECODING_CONFIG, **settings)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"Invalid KAAL_DECODING: {exc}") from exc
+
+
+def create_app(
+    weights_dir: Optional[str | Path] = None,
+    *,
+    decoding_config: DecodingConfig | None = None,
+) -> FastAPI:
     """Create and configure the KAAL-304M FastAPI application."""
     resolved_weights = Path(weights_dir) if weights_dir is not None else DEFAULT_WEIGHTS_DIR
-    engine = KAALEngine(weights_dir=resolved_weights)
+    engine = KAALEngine(
+        weights_dir=resolved_weights, decoding_config=decoding_config or _configured_decoding()
+    )
     inference_lock = asyncio.Lock()
 
     @asynccontextmanager
@@ -77,6 +100,7 @@ def create_app(weights_dir: Optional[str | Path] = None) -> FastAPI:
     app.state.engine = engine
     app.state.inference_lock = inference_lock
 
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1"])
     app.add_middleware(
         CORSMiddleware,
         allow_origins=ALLOWED_ORIGINS,
@@ -136,10 +160,11 @@ def create_app(weights_dir: Optional[str | Path] = None) -> FastAPI:
                             cancel_event=cancel_event,
                         ):
                             loop.call_soon_threadsafe(queue.put_nowait, event)
-                    except Exception as exc:  # pragma: no cover - defensive runtime guard
+                    except Exception:
+                        logger.exception("KAAL-304M streaming generation failed")
                         loop.call_soon_threadsafe(
                             queue.put_nowait,
-                            {"type": "error", "message": str(exc)},
+                            {"type": "error", "message": "Generation failed. Check the server log."},
                         )
                     finally:
                         loop.call_soon_threadsafe(queue.put_nowait, None)

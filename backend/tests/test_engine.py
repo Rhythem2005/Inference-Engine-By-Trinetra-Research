@@ -2,16 +2,17 @@
 
 from __future__ import annotations
 
-from dataclasses import FrozenInstanceError
+from dataclasses import FrozenInstanceError, replace
 from pathlib import Path
 
 import pytest
 import torch
 
 from backend.engine.config import (
+    DEFAULT_DECODING_CONFIG,
     DEFAULT_MODEL_CONFIG,
     EXPECTED_UNIQUE_PARAMS,
-    LOCKED_DECODING_CONFIG,
+    DecodingConfig,
     ModelConfig,
     format_prompt,
 )
@@ -19,6 +20,7 @@ from backend.engine.inference import (
     KAALEngine,
     apply_no_repeat_ngram,
     apply_repetition_penalty,
+    sample_next_token,
 )
 from backend.engine.model import KAALModel, count_unique_parameters
 
@@ -76,18 +78,44 @@ def test_canonical_prompt_format() -> None:
     assert p2.endswith("### Response:\n")
 
 
-def test_locked_decoding_config_is_immutable() -> None:
-    """Locked decoding hyperparameters must match spec and reject mutation."""
-    assert LOCKED_DECODING_CONFIG.do_sample is True
-    assert LOCKED_DECODING_CONFIG.temperature == 0.45
-    assert LOCKED_DECODING_CONFIG.top_k == 35
-    assert LOCKED_DECODING_CONFIG.top_p == 0.90
-    assert LOCKED_DECODING_CONFIG.repetition_penalty == 1.18
-    assert LOCKED_DECODING_CONFIG.no_repeat_ngram_size == 3
-    assert LOCKED_DECODING_CONFIG.max_new_tokens == 128
-
+def test_decoding_profile_is_immutable_and_configurable() -> None:
     with pytest.raises(FrozenInstanceError):
-        LOCKED_DECODING_CONFIG.temperature = 0.9  # type: ignore[misc]
+        DEFAULT_DECODING_CONFIG.temperature = 0.9  # type: ignore[misc]
+    with pytest.raises(ValueError, match="min_p"):
+        replace(DEFAULT_DECODING_CONFIG, min_p=1.1)
+    with pytest.raises(ValueError, match="context length"):
+        KAALEngine(decoding_config=replace(DEFAULT_DECODING_CONFIG, max_new_tokens=2048))
+
+
+def test_benchmarked_default_is_penalized_greedy() -> None:
+    assert not DEFAULT_DECODING_CONFIG.do_sample
+    assert DEFAULT_DECODING_CONFIG.repetition_penalty == 1.18
+    assert DEFAULT_DECODING_CONFIG.no_repeat_ngram_size == 3
+    assert DEFAULT_DECODING_CONFIG.max_new_tokens == 256
+
+
+def test_min_p_filters_relative_to_best_probability(monkeypatch) -> None:
+    def capture(probs, num_samples):
+        torch.testing.assert_close(probs, torch.tensor([0.0, 0.0, 1.0]))
+        return torch.tensor([2])
+
+    monkeypatch.setattr(torch, "multinomial", capture)
+    decoding = DecodingConfig(do_sample=True, temperature=1, top_k=0, top_p=1, min_p=0.5)
+    assert sample_next_token(torch.tensor([0.0, 1.0, 2.0]), [], decoding) == 2
+
+
+def test_frequency_and_presence_penalties(monkeypatch) -> None:
+    def capture(probs, num_samples):
+        expected = torch.softmax(torch.tensor([0.4, 0.7, 0.0]), dim=0)
+        torch.testing.assert_close(probs, expected)
+        return torch.tensor([1])
+
+    monkeypatch.setattr(torch, "multinomial", capture)
+    decoding = DecodingConfig(
+        do_sample=True, temperature=1, top_k=0, top_p=1, min_p=0,
+        repetition_penalty=1, no_repeat_ngram_size=0, frequency_penalty=0.3, presence_penalty=0.5,
+    )
+    assert sample_next_token(torch.tensor([1.5, 1.5, 0.0]), [0, 0, 1], decoding) == 1
 
 
 def test_sign_aware_repetition_penalty_and_ngram_blocker() -> None:

@@ -1,17 +1,15 @@
-const promptByteLimit = 2048 - 256;
 const encoder = new TextEncoder();
 const byteLength = (text) => encoder.encode(text).length;
 const historyHeading = 'Conversation so far:\n';
 
-export function buildChatContext(messages, message, reference) {
+export function buildChatContext(messages, message, reference, maxNewTokens = 256) {
   if (!messages.length) return reference;
 
   const referenceSection = reference ? `\n\nReference context:\n${reference}` : '';
   const contextEnd = `${referenceSection}\n\nLatest user message:\n${message}`;
-  // The backend uses byte-level BPE. Bytes give a conservative token bound and
-  // account for Unicode without downloading a second copy of the tokenizer.
+
   const promptWithoutTurns = `### Instruction:\n${message}\n\n### Input:\n${historyHeading}${contextEnd}\n\n### Response:\n`;
-  let available = promptByteLimit - byteLength(promptWithoutTurns);
+  let available = 2048 - maxNewTokens - byteLength(promptWithoutTurns);
   if (available <= 0) return reference;
 
   const turns = [];

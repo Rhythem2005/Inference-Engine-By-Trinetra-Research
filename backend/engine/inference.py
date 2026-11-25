@@ -6,8 +6,10 @@ import os
 
 os.environ.setdefault("PYTORCH_ENABLE_MPS_FALLBACK", "1")
 
+import math
 import threading
 import time
+from collections import Counter
 from pathlib import Path
 from typing import Any, Dict, Generator, List, Optional, Sequence
 
@@ -15,10 +17,10 @@ import torch
 from tokenizers import Tokenizer
 
 from .config import (
+    DEFAULT_DECODING_CONFIG,
     DEFAULT_MODEL_CONFIG,
     EOS_TOKEN,
     EXPECTED_UNIQUE_PARAMS,
-    LOCKED_DECODING_CONFIG,
     MODEL_NAME,
     DecodingConfig,
     ModelConfig,
@@ -84,11 +86,19 @@ def apply_no_repeat_ngram(
 def sample_next_token(
     logits_fp32: torch.Tensor,
     generated_ids: Sequence[int],
-    decoding: DecodingConfig = LOCKED_DECODING_CONFIG,
+    decoding: DecodingConfig = DEFAULT_DECODING_CONFIG,
 ) -> int:
-    """Sample next token in FP32 using the locked KAAL-304M decoding configuration."""
+    """Apply generated-token penalties and sample from the filtered FP32 logits."""
     logits = logits_fp32.float()
     logits = apply_repetition_penalty(logits, generated_ids, decoding.repetition_penalty)
+    if generated_ids and (decoding.frequency_penalty or decoding.presence_penalty):
+        counts = Counter(generated_ids)
+        ids = list(counts)
+        penalties = logits.new_tensor([
+            decoding.presence_penalty + decoding.frequency_penalty * counts[token] for token in ids
+        ])
+        logits = logits.clone()
+        logits[ids] -= penalties
     logits = apply_no_repeat_ngram(logits, generated_ids, decoding.no_repeat_ngram_size)
 
     if not decoding.do_sample or decoding.temperature <= 0:
@@ -100,6 +110,10 @@ def sample_next_token(
     if decoding.top_k > 0 and decoding.top_k < vocab_size:
         top_vals, _ = torch.topk(logits, decoding.top_k)
         threshold = top_vals[-1]
+        logits = logits.masked_fill(logits < threshold, float("-inf"))
+
+    if decoding.min_p:
+        threshold = logits.max() + math.log(decoding.min_p)
         logits = logits.masked_fill(logits < threshold, float("-inf"))
 
     if 0.0 < decoding.top_p < 1.0:
@@ -127,12 +141,16 @@ class KAALEngine:
         self,
         weights_dir: str | Path = "weights",
         model_config: ModelConfig = DEFAULT_MODEL_CONFIG,
+        *,
+        decoding_config: DecodingConfig = DEFAULT_DECODING_CONFIG,
     ) -> None:
         self.weights_dir = Path(weights_dir)
         self.checkpoint_path = self.weights_dir / "best_model.pt"
         self.tokenizer_path = self.weights_dir / "tokenizer.json"
         self.model_config = model_config
-        self.decoding_config = LOCKED_DECODING_CONFIG
+        self.decoding_config = decoding_config
+        if decoding_config.max_new_tokens >= model_config.context_length:
+            raise ValueError("max_new_tokens must be smaller than the model context length")
 
         self.device, self.dtype = select_device_and_dtype()
         self.model: Optional[KAALModel] = None
@@ -169,6 +187,7 @@ class KAALEngine:
             "params": self.unique_params,
             "weights_loaded": self.weights_loaded,
             "missing_files": missing,
+            "max_new_tokens": self.decoding_config.max_new_tokens,
         }
 
     def load(self) -> bool:
@@ -182,12 +201,15 @@ class KAALEngine:
 
             self.status = "loading"
             tokenizer = Tokenizer.from_file(str(self.tokenizer_path))
+            if set(tokenizer.get_vocab().values()) != set(range(self.model_config.vocab_size)):
+                raise ValueError("Tokenizer token IDs do not match the model vocabulary")
             eos_id = tokenizer.token_to_id(EOS_TOKEN)
             if eos_id is None:
                 raise ValueError(f"Tokenizer is missing required EOS token {EOS_TOKEN!r}")
 
             model = KAALModel(self.model_config)
-            payload = torch.load(self.checkpoint_path, map_location="cpu", weights_only=False)
+            # Accept tensor state dicts without enabling arbitrary pickle deserialization.
+            payload = torch.load(self.checkpoint_path, map_location="cpu", weights_only=True)
             state_dict = payload["model"] if isinstance(payload, dict) and "model" in payload else payload
             model.load_state_dict(state_dict, strict=True)
 
@@ -229,13 +251,14 @@ class KAALEngine:
         if not self.weights_loaded or self.model is None or self.tokenizer is None:
             raise RuntimeError("KAAL-304M weights are not loaded.")
 
+        decoding = self.decoding_config
         prompt = format_prompt(instruction, context)
         encoded = self.tokenizer.encode(prompt, add_special_tokens=False)
         prompt_ids: List[int] = list(encoded.ids)
         if not prompt_ids:
             prompt_ids = [self.eos_id]
 
-        max_prompt_tokens = self.model_config.context_length - self.decoding_config.max_new_tokens
+        max_prompt_tokens = self.model_config.context_length - decoding.max_new_tokens
         if len(prompt_ids) > max_prompt_tokens:
             prompt_ids = prompt_ids[-max_prompt_tokens:]
 
@@ -250,12 +273,12 @@ class KAALEngine:
                 logits, past_kv = self.model(input_ids, past_kv=None, use_cache=True)
                 next_logits = logits[0, -1, :].float()
 
-                for _ in range(self.decoding_config.max_new_tokens):
+                for _ in range(decoding.max_new_tokens):
                     if cancel_event is not None and cancel_event.is_set():
                         stopped_reason = "cancelled"
                         break
 
-                    next_token = sample_next_token(next_logits, generated_ids, self.decoding_config)
+                    next_token = sample_next_token(next_logits, generated_ids, decoding)
                     if next_token == self.eos_id:
                         stopped_reason = "eos"
                         break
@@ -273,7 +296,7 @@ class KAALEngine:
                         emitted_text = decoded
                         yield {"type": "token", "text": delta}
 
-                    if len(generated_ids) >= self.decoding_config.max_new_tokens:
+                    if len(generated_ids) >= decoding.max_new_tokens:
                         stopped_reason = "max_tokens"
                         break
 
@@ -308,7 +331,7 @@ class KAALEngine:
             }
 
     def generate(self, instruction: str, context: str = "") -> Dict[str, Any]:
-        """Generate a complete response synchronously using the locked decoding config."""
+        """Generate a complete response synchronously using the configured profile."""
         chunks: List[str] = []
         done_meta: Dict[str, Any] = {
             "tokens": 0,

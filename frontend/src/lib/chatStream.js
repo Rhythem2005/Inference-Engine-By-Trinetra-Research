@@ -11,7 +11,6 @@ export async function* readChatEvents(body) {
       finished = chunk.done;
       buffer += decoder.decode(chunk.value, { stream: !finished });
 
-      // Keep a trailing CR until the next read can distinguish it from CRLF.
       const lines = buffer.split(finished ? /\r\n|\r|\n/ : /\r\n|\r(?!$)|\n/);
       buffer = lines.pop();
       for (const line of lines) {
