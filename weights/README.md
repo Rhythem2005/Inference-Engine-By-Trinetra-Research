@@ -1,8 +1,16 @@
 # Model files
 
-Place the matching KAAL-304M files from Trinetra AI Research here.
+**[Download Model Weights](https://drive.google.com/drive/folders/1SwKDX3i0Ouxpm1KO65KIYUup582bH76n?usp=sharing)** from Trinetra AI Research.
 
-- `best_model.pt` is a PyTorch tensor state dictionary or a checkpoint with a `model` state dictionary.
-- `tokenizer.json` is the tokenizer that matches the checkpoint.
+Download both files and place them in this `weights/` folder at the root of the repository.
 
-A verified public download is pending. These local model files are excluded from the source release. Both engines use this directory. Follow the [Quick Start](../README.md#quick-start) for your operating system.
+- `best_model.pt` → `weights/best_model.pt` (model checkpoint)
+- `tokenizer.json` → `weights/tokenizer.json` (matching tokenizer)
+
+```text
+weights/
+├── best_model.pt
+└── tokenizer.json
+```
+
+Follow the [Quick Start](../README.md#quick-start) for your operating system.

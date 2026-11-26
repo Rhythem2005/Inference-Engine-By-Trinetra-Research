@@ -11,13 +11,20 @@ KAAL-304M is an experimental language model developed by Trinetra AI Research. T
 
 Copy the GitHub clone URL from **Code → HTTPS** and run `git clone URL kaal-304m`, replacing `URL` with the copied address. Then run `cd kaal-304m`. If you already downloaded the source, open a terminal in the folder containing `backend/`, `frontend/`, and `weights/`. The public clone URL is pending release approval.
 
-Both engines use the same model files. A verified public download is pending. If you already have the matching checkpoint and tokenizer from Trinetra AI Research, place them in the root `weights/` folder as shown below. The checkpoint may be about 1.4 GB. Loading and running it requires additional memory. The MIT license covers the inference software. Model artifacts have separate release and licensing requirements.
+**[Download Model Weights](https://drive.google.com/drive/folders/1SwKDX3i0Ouxpm1KO65KIYUup582bH76n?usp=sharing)** from Trinetra AI Research.
+
+Download both files and place them in the `weights/` folder at the root of the repository. Both engines use the same filenames.
+
+- `best_model.pt` → `weights/best_model.pt` (model checkpoint)
+- `tokenizer.json` → `weights/tokenizer.json` (matching tokenizer)
 
 ```text
 weights/
 ├── best_model.pt
 └── tokenizer.json
 ```
+
+The checkpoint may be about 1.4 GB. Loading and running it requires additional memory. The MIT license covers the inference software. Model artifacts have separate licensing requirements.
 
 ### macOS — Apple Silicon
 
