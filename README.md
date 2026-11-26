@@ -9,9 +9,9 @@ KAAL-304M is an experimental language model developed by Trinetra AI Research. T
 | macOS 14 or newer on Apple Silicon (M-series) | `backend/engine/` | Apple Silicon MPS when available, otherwise CPU |
 | Windows 64-bit (x86-64) | `backend/windows/` | Supported NVIDIA CUDA when available, otherwise CPU |
 
-Get a local copy of this repository and open a terminal in its root, the folder containing `backend/`, `frontend/`, and `weights/`. If you need to clone it, use Git and the repository's **Code → HTTPS** URL. The public repository URL is pending release approval.
+Copy the GitHub clone URL from **Code → HTTPS** and run `git clone URL kaal-304m`, replacing `URL` with the copied address. Then run `cd kaal-304m`. If you already downloaded the source, open a terminal in the folder containing `backend/`, `frontend/`, and `weights/`. The public clone URL is pending release approval.
 
-Both engines read the same checkpoint and tokenizer in the root `weights/` folder. Get the matching files from Trinetra AI Research and place them at these paths. A verified public download is pending. The source release is separate from the model artifacts, training code, and training datasets. The checkpoint may be about 1.4 GB. Loading and running it requires additional memory.
+Both engines use the same model files. A verified public download is pending. If you already have the matching checkpoint and tokenizer from Trinetra AI Research, place them in the root `weights/` folder as shown below. The checkpoint may be about 1.4 GB. Loading and running it requires additional memory. The MIT license covers the inference software. Model artifacts have separate release and licensing requirements.
 
 ```text
 weights/
@@ -88,8 +88,6 @@ Check the device and model status from another PowerShell window.
 Invoke-RestMethod http://127.0.0.1:8000/api/health
 ```
 
-AMD ROCm and Intel XPU can accelerate PyTorch on select Windows hardware with backend-specific builds and drivers. The Windows engine uses CPU for these systems. [AMD ROCm compatibility](https://rocm.docs.amd.com/en/latest/compatibility/compatibility-matrix.html) · [PyTorch Intel GPU support](https://docs.pytorch.org/docs/stable/notes/get_start_xpu.html).
-
 ### Open the chat
 
 Both servers bind to the loopback interface. Select **Get started** in the chat, enter a name or nickname, and choose a mascot. Type a prompt such as “How do plants produce food?” and press **Enter**. **Stop** ends generation. The status badge displays the active device when the model is ready. [Local chat](http://localhost:5173).
@@ -100,7 +98,7 @@ Both servers bind to the loopback interface. Select **Get started** in the chat,
 - **HTTP API** accepts a JSON object with `message` and optional `context`. Use `POST /api/chat` for a complete JSON response or `POST /api/chat/stream` for Server-Sent Events. Interactive API docs are available at [localhost port 8000](http://127.0.0.1:8000/docs).
 - **Python** callers can import `KAALEngine` from `backend.engine` on macOS or `backend.windows.engine` on Windows, call `load()`, then use `generate()` or iterate over `stream()`.
 
-For example, run this from another terminal while the app is up.
+On macOS, run this from another terminal while the app is up.
 
 ```sh
 curl -fsS http://127.0.0.1:8000/api/chat \
@@ -108,7 +106,23 @@ curl -fsS http://127.0.0.1:8000/api/chat \
   -d '{"message":"Summarize this sentence.","context":"Plants use sunlight to make sugars."}'
 ```
 
-To see events as they arrive, replace `/api/chat` with `/api/chat/stream` and add curl's `-N` option. For API-only use on macOS, activate the virtual environment and run `python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000`. On Windows, run the backend command from the Windows setup.
+The equivalent in Windows PowerShell uses the same request body.
+
+```powershell
+$body = @{
+    message = 'Summarize this sentence.'
+    context = 'Plants use sunlight to make sugars.'
+} | ConvertTo-Json -Compress
+Invoke-RestMethod http://127.0.0.1:8000/api/chat -Method Post -ContentType 'application/json' -Body $body
+```
+
+To see events as they arrive on macOS, change the endpoint to `/api/chat/stream` and add curl's `-N` option. In PowerShell, use the same `$body` variable with `curl.exe`.
+
+```powershell
+$body | curl.exe -fsS -N http://127.0.0.1:8000/api/chat/stream -H 'Content-Type: application/json' --data-binary '@-'
+```
+
+For API-only use on macOS, activate the virtual environment and run `python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000`. On Windows, run the backend command from the Windows setup.
 
 ## Generation settings
 

@@ -606,7 +606,6 @@ button:focus-visible, input:focus-visible, summary:focus-visible, textarea:focus
   box-shadow: 0 9px 22px #0006;
 }
 .model-options li { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 8px; font-size: 13px; }
-.coming-soon { padding: 2px 6px; border-radius: 5px; background: #3a2e23; color: #edc197; white-space: nowrap; font-size: 10px; }
 
 .profile-form { display: grid; gap: 13px; width: min(100%, 330px); margin: 16px auto 0; }
 .profile-form > input {

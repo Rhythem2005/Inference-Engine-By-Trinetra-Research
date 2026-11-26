@@ -7,7 +7,7 @@ export default function WelcomeIntro({ onContinue }) {
     <main className="welcome intro" aria-labelledby="intro-title">
       <div className="intro-panel">
         <div className="intro-copy">
-          <h1 id="intro-title">Welcome to<br />Trinetra Research.</h1>
+          <h1 id="intro-title">Welcome to<br />Trinetra AI Research.</h1>
           <p>A quiet place to ask questions, play with ideas, and explore a language model running on your device.</p>
           <button className="intro-action" type="button" onClick={onContinue}>
             Get started <ArrowRight size={17} aria-hidden="true" />

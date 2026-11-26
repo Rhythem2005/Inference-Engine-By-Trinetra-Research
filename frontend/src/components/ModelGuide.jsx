@@ -72,7 +72,7 @@ export default function ModelGuide({ compact, maxNewTokens, onSelectPrompt }) {
 
       <dialog className="research-dialog model-guide" ref={details} aria-labelledby="model-guide-title">
         <header className="research-bar">
-          <strong>TRINETRA RESEARCH</strong>
+          <strong>TRINETRA AI RESEARCH</strong>
           <form method="dialog">
             <button className="notice-close" aria-label="Close model details"><X size={18} aria-hidden="true" /></button>
           </form>
@@ -80,7 +80,7 @@ export default function ModelGuide({ compact, maxNewTokens, onSelectPrompt }) {
         <div className="research-content">
           <p className="research-label">Model notes</p>
           <h2 id="model-guide-title">Inside KAAL-304M</h2>
-          <p className="research-lead">An experimental decoder-only Transformer, trained from scratch and released for local inference and experimentation.</p>
+          <p className="research-lead">An experimental decoder-only Transformer trained from scratch at Trinetra AI Research.</p>
 
           <dl className="research-grid model-specs">
             <div><dt>Parameters</dt><dd>304,355,328 unique</dd></div>
@@ -95,15 +95,14 @@ export default function ModelGuide({ compact, maxNewTokens, onSelectPrompt }) {
           <h3>What limited compute meant for this checkpoint</h3>
           <p>The available compute constrained how long the model could pretrain. That is a credible contributor to weak factual recall and reasoning. The inference code and these tests cannot tell us how much of the behavior comes from model size, training data, pretraining duration, or instruction training. Isolating those effects would require controlled comparisons across checkpoints.</p>
 
-          <h3>What happened in local testing</h3>
-          <p>Earlier spot checks found factual and arithmetic errors. A later run sent 1,000 distinct prompts in sequence across creative writing, description, brainstorming, rewriting, and summarization. All 1,000 streams completed. Many replies stayed on topic but missed the task. For example, when asked to rewrite “I paint a lighthouse every summer” in the past tense, the model returned the original sentence. A broken-clock story prompt produced a time-machine premise on one run and an unrelated account of clock history on replay.</p>
-          <p>The 1,000-prompt run was exploratory. Stream completion measures whether inference finished, and the handpicked starter prompts show examples of what the model can sometimes do. Neither establishes an accuracy rate.</p>
+          <h3>Evaluation</h3>
+          <p>The suggested prompts are examples. For evaluation details, use the Website link in the header.</p>
 
           <h3>Why the same prompt can give a different answer</h3>
           <p>The engine uses a server-wide decoding profile. When sampling is enabled, the wording and direction of a reply can vary. The context window is also finite. The engine reserves room for the response and drops the beginning of overlong inputs. That can remove useful instructions or reference text, although it does not explain failures on the short prompts above.</p>
 
           <h3>Using this checkpoint</h3>
-          <p>Try short experiments with one clear task. Use Add Reference Context when there is a passage the model should work from, and check the reply against that source. Extended pretraining is underway. Updated weights are planned after additional training and evaluation.</p>
+          <p>Try short experiments with one clear task. Use Add Reference Context when there is a passage the model should work from, and check the reply against that source.</p>
         </div>
       </dialog>
     </>

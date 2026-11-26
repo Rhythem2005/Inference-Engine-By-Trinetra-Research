@@ -12,7 +12,7 @@ export default function AboutResearch({ section, onClose }) {
   return (
     <dialog className="research-dialog" ref={dialogRef} onClose={onClose} aria-labelledby="research-title">
       <header className="research-bar">
-        <strong id="research-title">TRINETRA RESEARCH</strong>
+        <strong id="research-title">TRINETRA AI RESEARCH</strong>
         <span className="research-panel-name">{title}</span>
         <form method="dialog"><button className="notice-close" aria-label={`Close ${title}`}><X size={18} aria-hidden="true" /></button></form>
       </header>
@@ -28,7 +28,7 @@ export default function AboutResearch({ section, onClose }) {
         </section>}
         {section === 'founder' && <section id="research-founder" aria-labelledby="founder-title">
           <h2 id="founder-title">About the founder</h2>
-          <p>Trinetra Research started as an independent project to learn how language models are built, trained, and evaluated. The Website link in the header has more about the people and projects behind the research.</p>
+          <p>Trinetra AI Research started as an independent project to learn how language models are built, trained, and evaluated. The Website link in the header has more about the people and projects behind the research.</p>
         </section>}
       </div>
     </dialog>

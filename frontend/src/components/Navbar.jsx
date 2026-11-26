@@ -15,7 +15,7 @@ export default function Navbar({ health, backendError, onNewChat, onAbout }) {
       <div className="masthead-inner">
         <div className="wordmark">
           <img className="brand-mark" src={trinetraLogo} alt="" />
-          <span>Trinetra Research</span>
+          <span>Trinetra AI Research</span>
         </div>
         <div className="masthead-actions">
           <span className="health-badge" data-ready={ready} role="status">
@@ -24,7 +24,7 @@ export default function Navbar({ health, backendError, onNewChat, onAbout }) {
           <button className="about-button" type="button" onClick={() => onAbout('philosophy')}>Philosophy</button>
           <button className="about-button" type="button" onClick={() => onAbout('founder')}>Founder</button>
           <a className="about-button website-link" href="https://trinetra-research.vercel.app/" target="_blank" rel="noopener noreferrer"
-            aria-label="Trinetra Research website (opens in a new tab)">
+            aria-label="Trinetra AI Research website (opens in a new tab)">
             Website <ArrowUpRight size={13} aria-hidden="true" />
           </a>
           <button className="new-chat" type="button" onClick={onNewChat}>
